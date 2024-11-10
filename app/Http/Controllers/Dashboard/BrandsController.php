@@ -52,7 +52,7 @@ class BrandsController extends Controller
 
     public  function  edit($id){
         //get specific categories and its translations
-        $brand = Category::orderBy('id', 'DESC')->find($id);
+        $brand = Brand::orderBy('id', 'DESC')->find($id);
 
         if (!$brand)
             return redirect()->route('admin.brands')->with(['error' => 'هذا القسم غير موجود ']);
@@ -65,24 +65,35 @@ class BrandsController extends Controller
             //validation
 
             //update DB
-            $category =  Category::find($id);
-            if (!$category){
-                return redirect()->route('admin.maincategories')->with(['error' => 'هذا القسم غير موجود ']);
+            $brand =  Brand::find($id);
+            if (!$brand){
+                return redirect()->route('admin.brands')->with(['error' => 'هذا القسم غير موجود ']);
             }
+            DB::beginTransaction();
+            if ($request->has('photo')){
+                $fileName= uploadImage('brands',$request->photo);
+                Brand::where('id',$id)->update([
+                    'photo'=>$fileName,
+                ]);
+            }
+
             if (!$request->has('is_active'))
                 $request->request->add(['is_active'=>0]);
             else
                 $request->request->add(['is_active'=>1]);
 
 
-            $category ->update($request -> all());
+            $brand ->update($request -> except('_token','id','photo'));
 
             // save translation
-            $category ->name =$request->name;
-            $category ->save();
-            return redirect()->route('admin.maincategories')->with(['success' => 'تم التحديث بنجاح']);
+            $brand ->name =$request->name;
+            $brand ->save();
+            DB::commit();
+            return redirect()->route('admin.brands')->with(['success' => 'تم التحديث بنجاح']);
         }catch (\Exception $ex){
-            return redirect()->route('admin.maincategories')->with(['error' => 'حدث خطا ما برجاء المحاوله لاحقا']);
+
+            DB::rollBack();
+            return redirect()->route('admin.brands')->with(['error' => 'حدث خطا ما برجاء المحاوله لاحقا']);
         }
     }
 
@@ -93,16 +104,16 @@ class BrandsController extends Controller
             //update DB
 
 
-            $category =  Category::orderBy('id', 'DESC')->find($id);
+            $brand =  Brand::find($id);
 
-            if (!$category){
-                return redirect()->route('admin.maincategories')->with(['error' => 'هذا القسم غير موجود ']);
+            if (!$brand){
+                return redirect()->route('admin.brands')->with(['error' => 'هذا القسم غير موجود ']);
             }
-            $category ->delete();
+            $brand ->delete();
 
-            return redirect()->route('admin.maincategories')->with(['success' => 'تم الحذف بنجاح']);
+            return redirect()->route('admin.brands')->with(['success' => 'تم الحذف بنجاح']);
         }catch (\Exception $ex){
-            return redirect()->route('admin.maincategories')->with(['error' => 'حدث خطا ما برجاء المحاوله لاحقا']);
+            return redirect()->route('admin.brands')->with(['error' => 'حدث خطا ما برجاء المحاوله لاحقا']);
         }
     }
 }
